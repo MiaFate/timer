@@ -1,0 +1,30 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.sum
+focus-tracker.exe
+gogogott.exe
+go.sum
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
