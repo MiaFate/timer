@@ -62,9 +62,20 @@ jobs:
         go mod tidy
         go build ${{ matrix.build_args }} -o ${{ matrix.artifact_name }} .
 
+    - name: MacOS App Bundling
+      if: runner.os == 'macOS'
+      run: |
+        mkdir -p Gogogott.app/Contents/MacOS
+        mkdir -p Gogogott.app/Contents/Resources
+        cp gogogott-macos Gogogott.app/Contents/MacOS/gogogott
+        cp internal/infrastructure/desktop/macos_assets/Info.plist Gogogott.app/Contents/Info.plist
+        # (Optional) convert icon here if we had tools, but for now just the app structure
+        zip -r gogogott-macos.zip Gogogott.app
+
     - name: Upload Release Asset
       uses: softprops/action-gh-release@v2
       with:
-        files: ./${{ matrix.artifact_name }}
+        files: |
+          ${{ runner.os == 'macOS' && './gogogott-macos.zip' || format('./{0}', matrix.artifact_name) }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
