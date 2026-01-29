@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Gogogott
+Comment=Track your focus time.
+Exec=gogogott
+Icon=gogogott
+Terminal=false
+Type=Application
+Categories=Utility;Education;

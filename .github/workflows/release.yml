@@ -68,14 +68,25 @@ jobs:
         mkdir -p Gogogott.app/Contents/MacOS
         mkdir -p Gogogott.app/Contents/Resources
         cp gogogott-macos Gogogott.app/Contents/MacOS/gogogott
+        chmod +x Gogogott.app/Contents/MacOS/gogogott
         cp internal/infrastructure/desktop/macos_assets/Info.plist Gogogott.app/Contents/Info.plist
-        # (Optional) convert icon here if we had tools, but for now just the app structure
         zip -r gogogott-macos.zip Gogogott.app
+
+    - name: Linux Packaging
+      if: runner.os == 'Linux'
+      run: |
+        mkdir -p gogogott-linux-amd64
+        cp gogogott-linux gogogott-linux-amd64/gogogott
+        cp internal/infrastructure/desktop/linux_assets/gogogott.desktop gogogott-linux-amd64/
+        chmod +x gogogott-linux-amd64/gogogott
+        tar -czvf gogogott-linux.tar.gz gogogott-linux-amd64/
 
     - name: Upload Release Asset
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ${{ runner.os == 'macOS' && './gogogott-macos.zip' || format('./{0}', matrix.artifact_name) }}
+          ./gogogott-windows.exe
+          ./gogogott-macos.zip
+          ./gogogott-linux.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
