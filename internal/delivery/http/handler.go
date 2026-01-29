@@ -1,23 +1,22 @@
-package api
+package http
 
 import (
 	"net/http"
-	"timer/platform"
-	"timer/tracker"
+	"timer/internal/usecase"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	Tracker *tracker.Tracker
+	TrackerUseCase *usecase.TrackerUseCase
 }
 
-func NewHandler(t *tracker.Tracker) *Handler {
-	return &Handler{Tracker: t}
+func NewHandler(uc *usecase.TrackerUseCase) *Handler {
+	return &Handler{TrackerUseCase: uc}
 }
 
 func (h *Handler) GetApps(c *gin.Context) {
-	apps, err := platform.GetOpenWindows()
+	apps, err := h.TrackerUseCase.GetOpenApps()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -34,17 +33,17 @@ func (h *Handler) StartTracking(c *gin.Context) {
 		return
 	}
 
-	h.Tracker.Start(req.PID)
+	h.TrackerUseCase.Start(req.PID)
 	c.JSON(http.StatusOK, gin.H{"status": "tracking started", "pid": req.PID})
 }
 
 func (h *Handler) StopTracking(c *gin.Context) {
-	h.Tracker.Stop()
+	h.TrackerUseCase.Stop()
 	c.JSON(http.StatusOK, gin.H{"status": "tracking stopped"})
 }
 
 func (h *Handler) GetStatus(c *gin.Context) {
-	tracking, duration, pid, isActive := h.Tracker.GetStatus()
+	tracking, duration, pid, isActive := h.TrackerUseCase.GetStatus()
 	c.JSON(http.StatusOK, gin.H{
 		"tracking":  tracking,
 		"seconds":   duration.Seconds(),

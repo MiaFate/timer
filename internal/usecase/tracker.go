@@ -1,31 +1,35 @@
-package tracker
+package usecase
 
 import (
 	"fmt"
 	"sync"
 	"time"
-	"timer/platform"
+	"timer/internal/domain"
 )
 
-type Tracker struct {
+type TrackerUseCase struct {
 	TargetPID       uint32
 	AccumulatedTime time.Duration
 	IsTracking      bool
 	IsTargetActive  bool
 	mu              sync.Mutex
 	stopCh          chan struct{}
+
+	// Dependency
+	winService domain.WindowService
 }
 
-func NewTracker() *Tracker {
-	return &Tracker{
-		stopCh: make(chan struct{}),
+func NewTrackerUseCase(ws domain.WindowService) *TrackerUseCase {
+	return &TrackerUseCase{
+		stopCh:     make(chan struct{}),
+		winService: ws,
 	}
 }
 
-func (t *Tracker) Start(pid uint32) {
+func (t *TrackerUseCase) Start(pid uint32) {
 	t.mu.Lock()
 	if t.IsTracking {
-		t.Stop() // Stop previous if any
+		t.Stop()
 	}
 	t.TargetPID = pid
 	t.IsTracking = true
@@ -36,7 +40,7 @@ func (t *Tracker) Start(pid uint32) {
 	go t.loop()
 }
 
-func (t *Tracker) Stop() {
+func (t *TrackerUseCase) Stop() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.IsTracking {
@@ -47,7 +51,7 @@ func (t *Tracker) Stop() {
 	}
 }
 
-func (t *Tracker) loop() {
+func (t *TrackerUseCase) loop() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
@@ -56,9 +60,9 @@ func (t *Tracker) loop() {
 		case <-t.stopCh:
 			return
 		case <-ticker.C:
-			activePID, err := platform.GetForegroundWindowPID()
+			activePID, err := t.winService.GetForegroundWindowPID()
 			if err != nil {
-				fmt.Println("Error getting foreground window:", err)
+				fmt.Println("Error checking active window:", err)
 				continue
 			}
 
@@ -74,8 +78,13 @@ func (t *Tracker) loop() {
 	}
 }
 
-func (t *Tracker) GetStatus() (bool, time.Duration, uint32, bool) {
+func (t *TrackerUseCase) GetStatus() (bool, time.Duration, uint32, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.IsTracking, t.AccumulatedTime, t.TargetPID, t.IsTargetActive
+}
+
+func (t *TrackerUseCase) GetOpenApps() ([]domain.AppInfo, error) {
+	// This could be in a separate AppUseCase, but fitting here for simplicity for now
+	return t.winService.GetOpenWindows()
 }

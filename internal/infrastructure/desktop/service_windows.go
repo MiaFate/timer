@@ -1,11 +1,20 @@
-package platform
+//go:build windows
+
+package desktop
 
 import (
 	"syscall"
+	"timer/internal/domain"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
+
+type WindowsService struct{}
+
+func NewWindowService() domain.WindowService {
+	return &WindowsService{}
+}
 
 var (
 	user32                       = windows.NewLazySystemDLL("user32.dll")
@@ -16,14 +25,8 @@ var (
 	procGetForegroundWindow      = user32.NewProc("GetForegroundWindow")
 )
 
-type AppInfo struct {
-	PID   uint32         `json:"pid"`
-	Title string         `json:"title"`
-	HWnd  windows.Handle `json:"hwnd"`
-}
-
-func GetOpenWindows() ([]AppInfo, error) {
-	var apps []AppInfo
+func (s *WindowsService) GetOpenWindows() ([]domain.AppInfo, error) {
+	var apps []domain.AppInfo
 	seenPIDs := make(map[uint32]bool)
 
 	cb := syscall.NewCallback(func(hwnd windows.Handle, lparam uintptr) uintptr {
@@ -33,7 +36,6 @@ func GetOpenWindows() ([]AppInfo, error) {
 
 		pid := getPid(hwnd)
 
-		// Skip if we already have this PID
 		if seenPIDs[pid] {
 			return 1
 		}
@@ -45,7 +47,7 @@ func GetOpenWindows() ([]AppInfo, error) {
 		}
 
 		seenPIDs[pid] = true
-		apps = append(apps, AppInfo{
+		apps = append(apps, domain.AppInfo{
 			PID:   pid,
 			Title: title,
 			HWnd:  hwnd,
@@ -57,7 +59,7 @@ func GetOpenWindows() ([]AppInfo, error) {
 	return apps, nil
 }
 
-func GetForegroundWindowPID() (uint32, error) {
+func (s *WindowsService) GetForegroundWindowPID() (uint32, error) {
 	hwnd, _, _ := procGetForegroundWindow.Call()
 	if hwnd == 0 {
 		return 0, nil
