@@ -50,7 +50,6 @@ func (s *WindowsService) GetOpenWindows() ([]domain.AppInfo, error) {
 		apps = append(apps, domain.AppInfo{
 			PID:   pid,
 			Title: title,
-			HWnd:  hwnd,
 		})
 		return 1 // Continue
 	})

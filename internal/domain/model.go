@@ -1,13 +1,8 @@
 package domain
 
-import (
-	"golang.org/x/sys/windows"
-)
-
 type AppInfo struct {
-	PID   uint32         `json:"pid"`
-	Title string         `json:"title"`
-	HWnd  windows.Handle `json:"hwnd"`
+	PID   uint32 `json:"pid"`
+	Title string `json:"title"`
 }
 
 type WindowService interface {
