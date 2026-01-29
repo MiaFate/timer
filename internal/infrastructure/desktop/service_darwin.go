@@ -16,20 +16,37 @@ func NewWindowService() domain.WindowService {
 }
 
 func (s *DarwinService) GetOpenWindows() ([]domain.AppInfo, error) {
-	// macOS doesn't have a simple way to list ALL open windows with PIDs like EnumWindows without Cgo/CoreGraphics
-	// For now, we return empty or just the frontmost to satisfy the interface.
-	// Listing all app names:
-	out, err := exec.Command("osascript", "-e", `tell application "System Events" to get name of every application process whose background only is false`).Output()
+	// Strategy: Use AppleScript to get PID and name together
+	// Format: pid1, name1, pid2, name2...
+	script := `set output to ""
+	tell application "System Events"
+		set procs to every application process whose background only is false
+		repeat with p in procs
+			set output to output & (unix id of p as text) & "|" & (name of p as text) & "\n"
+		end repeat
+	end tell
+	return output`
+
+	out, err := exec.Command("osascript", "-e", script).Output()
 	if err != nil {
 		return []domain.AppInfo{}, nil
 	}
 
-	names := strings.Split(string(out), ", ")
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	var apps []domain.AppInfo
-	for i, name := range names {
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		parts := strings.Split(line, "|")
+		if len(parts) < 2 {
+			continue
+		}
+
+		pid64, _ := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 32)
 		apps = append(apps, domain.AppInfo{
-			PID:   uint32(i + 1000), // Dummy PID for listing if we can't get it easily
-			Title: strings.TrimSpace(name),
+			PID:   uint32(pid64),
+			Title: strings.TrimSpace(parts[1]),
 		})
 	}
 
