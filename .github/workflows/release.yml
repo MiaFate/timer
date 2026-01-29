@@ -39,7 +39,19 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libwebkit2gtk-4.0-dev libx11-dev xorg-dev libgtk-3-dev x11-utils
 
-    - name: Build
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+        cd ..
+
+    - name: Build Backend
       run: |
         go mod tidy
         go build ${{ matrix.build_args }} -o ${{ matrix.artifact_name }} .
