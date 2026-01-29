@@ -7,10 +7,8 @@
 *.test
 *.out
 vendor/
-go.sum
 focus-tracker.exe
 gogogott.exe
-go.sum
 
 # Node
 node_modules/
